@@ -8,13 +8,68 @@
 #include "strutil.h"
 #include "mensajes.h"
 #include <stdbool.h>
-#include<stdlib.h>
+#include <stdlib.h>
 #include <ctype.h>
 #define COMANDO_PEDIR_TURNO "PEDIR_TURNO"
 #define COMANDO_ATENDER "ATENDER_SIGUIENTE"
 #define COMANDO_INFORME "INFORME"
 #define POSICION_ARCHIVO_DOCTORES 1
 #define POSICION_ARCHIVO_PACIENTES 2
+
+/*Struct campo_doctores*/
+
+struct campo_doctores{
+	char* especialidad;
+	int atendidos;
+};
+
+campo_doctores_t* campo_doctores_crear(char* especialidad){
+	campo_doctores_t* campo_doctores = malloc(sizeof(campo_doctores_t));
+	if (!campo_doctores) return NULL;
+	campo_doctores->especialidad = strdup(especialidad);
+	if (!campo_doctores->especialidad){
+		free(campo_doctores);
+		return NULL;
+	}
+	campo_doctores->atendidos = 0;
+	return campo_doctores;
+}
+
+void destruir_campo_doctores(void* campo_doctores){
+	free(((campo_doctores_t*)campo_doctores)->especialidad);
+	free((campo_doctores_t*)campo_doctores);
+}
+
+
+/*Struct de estructuras*/
+
+struct estructuras{
+	abb_t* doctores;
+	hash_t* pacientes;
+};
+
+void destruir_estructura(estructuras_t* estructura){	
+	if(estructura->pacientes) hash_destruir(estructura->pacientes);
+	if(estructura->doctores) abb_destruir(estructura->doctores);
+	free(estructura);
+}
+
+estructuras_t* estructuras_crear(){
+	estructuras_t* estructura = malloc(sizeof(estructuras_t));
+	if(!estructura) return NULL;	
+	estructura->doctores = abb_crear(strcmp, destruir_campo_doctores); 
+	if(!estructura->doctores){
+		destruir_estructura(estructura);
+		return NULL;
+	}
+	estructura->pacientes = hash_crear(free);
+	if(!estructura->pacientes){
+		destruir_estructura(estructura);
+		return NULL;
+	}
+	return estructura;
+}
+
 
 /*
 
@@ -107,6 +162,7 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	while(getline(&linea, &capacidad, archivo2) > 0){
 		char** campos = split(linea, ',');
 		if(!campos || !es_numero(campos[1])){ // sin todas esas lineas se pierde memoria
+			puts("s"); // esta cayendo siempre aca no se porque
 			free(linea);
 			free_strv(campos);
 			fclose(archivo2);               // hay que hacer una funcion auxiliar que ejecute estas 4 lineas
@@ -144,7 +200,6 @@ int main(int argc, char** argv){
 	char* archivo_pacientes = argv[POSICION_ARCHIVO_PACIENTES];
 	estructuras_t* estructura = leo_archivos(archivo_doctores, archivo_pacientes);
 	if (!estructura) return 1;
-
 	// imprime todo el abb de doctores 
 	abb_in_order(estructura->doctores,visitar,NULL);
 
