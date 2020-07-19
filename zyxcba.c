@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "hash.h"
 #include "heap.h"
 #include "abb.h"
@@ -15,7 +16,7 @@
 #define POSICION_ARCHIVO_DOCTORES 1
 #define POSICION_ARCHIVO_PACIENTES 2
 
-
+/*
 
 void procesar_comando(const char* comando, const char** parametros) {
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
@@ -28,14 +29,14 @@ void procesar_comando(const char* comando, const char** parametros) {
 
 	}
 }
-
+*/
 void eliminar_fin_linea(char* linea) {
 	size_t len = strlen(linea);
 	if (linea[len - 1] == '\n') {
 		linea[len - 1] = '\0';
 	}
 }
-
+/*
 void procesar_entrada() {
 	char* linea = NULL;
 	size_t c = 0;
@@ -54,7 +55,7 @@ void procesar_entrada() {
 	}
 	free(linea);
 }
-
+*/
 /*
 *
 *					lo nuestro
@@ -63,8 +64,8 @@ void procesar_entrada() {
 
 
 bool es_numero(char* str){
-	for(int x = 0; str[x] != '\0'; x++){
-		if(!isdigit(str[x])) return false;
+	for (int x = 0; str[x] != '\0'; x++){
+		if (!isdigit(str[x])) return false;
 	}
 	return true;
 }
@@ -72,13 +73,13 @@ bool es_numero(char* str){
 typedef struct campo_doctores{
 	char* especialidad;
 	int atendidos;
-}campo_doctores_t;
+} campo_doctores_t;
 
 campo_doctores_t* campo_doctores_crear(char* especialidad){
-	campo_doctores_t* campo_doctores = malloc(sizeof(campo_doctores_t*));
-	if(!campo_doctores) return NULL;
+	campo_doctores_t* campo_doctores = malloc(sizeof(campo_doctores_t));
+	if (!campo_doctores) return NULL;
 	campo_doctores->especialidad = strdup(especialidad);
-	if(!campo_doctores->especialidad){
+	if (!campo_doctores->especialidad){
 		free(campo_doctores);
 		return NULL;
 	}
@@ -86,9 +87,9 @@ campo_doctores_t* campo_doctores_crear(char* especialidad){
 	return campo_doctores;
 }
 
-void destruir_campo_doctores(campo_doctores_t* campo_doctores){
-	free(campo_doctores->especialidad);
-	free(campo_doctores);
+void destruir_campo_doctores(void* campo_doctores){
+	free(((campo_doctores_t*)campo_doctores)->especialidad);
+	free((campo_doctores_t*)campo_doctores);
 }
 
 typedef struct estructuras{
@@ -96,8 +97,7 @@ typedef struct estructuras{
 	hash_t* pacientes;
 } estructuras_t;
 
-void estructura_destruir(estructuras_t* estructura){
-	
+void destruir_estructura(estructuras_t* estructura){	
 	if(estructura->pacientes) hash_destruir(estructura->pacientes);
 	if(estructura->doctores) abb_destruir(estructura->doctores);
 	free(estructura);
@@ -105,19 +105,17 @@ void estructura_destruir(estructuras_t* estructura){
 
 estructuras_t* estructuras_crear(){
 	estructuras_t* estructura = malloc(sizeof(estructuras_t));
-	if(!estructura) return NULL;
-	
-	estructura->doctores = abb_crear(strcmp, destruir_campo_doctores); // aca va la funcion de destruccion
+	if(!estructura) return NULL;	
+	estructura->doctores = abb_crear(strcmp, destruir_campo_doctores); 
 	if(!estructura->doctores){
-		estructura_destruir(estructura);
+		destruir_estructura(estructura);
 		return NULL;
 	}
 	estructura->pacientes = hash_crear(free);
 	if(!estructura->pacientes){
-		estructura_destruir(estructura);
+		destruir_estructura(estructura);
 		return NULL;
 	}
-
 	return estructura;
 }
 
@@ -139,7 +137,8 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 			destruir_estructura(estructura);
 			return NULL;
 		}
-		campo_doctores_t* campo_doctores = campo_doctores_crear(campos[0]);
+		eliminar_fin_linea(campos[1]);
+		campo_doctores_t* campo_doctores = campo_doctores_crear(campos[1]);
 		if(!campo_doctores){
 			destruir_estructura(estructura);
 			return NULL;
@@ -151,6 +150,7 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 		}
 		free_strv(campos);
 	}
+	free(linea);
 	fclose(archivo);
 
 	FILE*  archivo2 = fopen(archivo_pacientes, "r");
@@ -163,8 +163,11 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	
 	while(getline(&linea, &capacidad, archivo2) > 0){
 		char** campos = split(linea, ',');
-		if(!campos || es_numero(campos[1])){
-			destruir_estructura(estructura);
+		if(!campos || !es_numero(campos[1])){ // sin todas esas lineas se pierde memoria
+			free(linea);
+			free_strv(campos);
+			fclose(archivo2);               // hay que hacer una funcion auxiliar que ejecute estas 4 lineas
+			destruir_estructura(estructura); // quizas meter todo aca
 			return NULL;
 		}
 		int* numero = malloc(sizeof(int));
@@ -181,19 +184,38 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 		free_strv(campos);
 	}
 	fclose(archivo2);
-
+	free(linea);
 	return estructura;
 }
 
-int main(int argc, char** argv) {
-	
-	if(argc != 3) return 1;
+// funciones auxiliares para pruebas
+// imprime todo el abb de doctores en orden
+bool visitar(const char* clave, void* dato, void* extra){
+    printf("doctor: %s especialidad: %s \n", clave,((campo_doctores_t*)dato)->especialidad);
+    return true;
+}
 
+int main(int argc, char** argv){ 	
+	if (argc != 3) return 1;
 	char* archivo_doctores = argv[POSICION_ARCHIVO_DOCTORES];
 	char* archivo_pacientes = argv[POSICION_ARCHIVO_PACIENTES];
 	estructuras_t* estructura = leo_archivos(archivo_doctores, archivo_pacientes);
-	if(!estructura) return 1;
-			
+	if (!estructura) return 1;
+
+	// imprime todo el abb de doctores 
+	abb_in_order(estructura->doctores,visitar,NULL);
+
+	// imprime todo el hash de pacientes
+	hash_iter_t* iter = hash_iter_crear(estructura->pacientes);
+	while (!hash_iter_al_final(iter)){
+		const char* clave = hash_iter_ver_actual(iter);
+		printf("paciente: %s anio: %d \n",clave,*(int*)hash_obtener(estructura->pacientes,clave));
+		hash_iter_avanzar(iter);
+	}
+	hash_iter_destruir(iter);
+	
+
+	destruir_estructura(estructura);		
 	return 0;
 }
 

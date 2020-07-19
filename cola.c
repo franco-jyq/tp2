@@ -1,13 +1,13 @@
 #include "cola.h"
 #include <stdlib.h>
 
-typedef struct nodo {
+typedef struct nodo_cola {
 	void *dato;
-	struct nodo *prox;
-} nodo_t;
+	struct nodo_cola *prox;
+} nodo_cola_t;
 
-nodo_t* crear_nodo(void* dato){
-	nodo_t* nodo = malloc(sizeof(nodo_t));
+nodo_cola_t* crear_nodo_cola(void* dato){
+	nodo_cola_t* nodo = malloc(sizeof(nodo_cola_t));
 	if (nodo == NULL){
 		return NULL;
 	}
@@ -15,13 +15,13 @@ nodo_t* crear_nodo(void* dato){
 	return nodo;
 }
 
-void destruir_nodo(nodo_t *nodo){
+void destruir_nodo_cola(nodo_cola_t *nodo){
 	free(nodo);
 }
 
 struct cola {
-	nodo_t *prim;
-	nodo_t *ult;
+	nodo_cola_t *prim;
+	nodo_cola_t *ult;
 };
 
 cola_t* cola_crear(void){
@@ -49,7 +49,7 @@ bool cola_esta_vacia(const cola_t *cola){
 }
 
 bool cola_encolar(cola_t *cola, void* valor){
-	nodo_t* nuevo_nodo = crear_nodo(valor);
+	nodo_cola_t* nuevo_nodo = crear_nodo_cola(valor);
 	if (nuevo_nodo == NULL){
 		return false;
 	}
@@ -77,12 +77,12 @@ void* cola_desencolar(cola_t *cola){
 		return NULL;
 	}
 	void* dato = cola->prim->dato;
-	nodo_t* nodo_a_destruir = cola->prim;
+	nodo_cola_t* nodo_a_destruir = cola->prim;
 	cola->prim = cola->prim->prox;
 	if (cola_esta_vacia(cola)){
 		cola->ult = NULL;
 	}
-	destruir_nodo(nodo_a_destruir);
+	destruir_nodo_cola(nodo_a_destruir);
 	return dato;
 
 }
