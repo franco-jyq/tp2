@@ -43,27 +43,45 @@ void destruir_campo_doctores(void* campo_doctores){
 struct clinica{
 	abb_t* doctores;
 	hash_t* pacientes;
+	hash_t* colas_de_urgencia;
+	hash_t* colas_regulares;
 };
 
 void destruir_clinica(clinica_t* clinica){	
 	if(clinica->pacientes) hash_destruir(clinica->pacientes);
 	if(clinica->doctores) abb_destruir(clinica->doctores);
+	if(clinica->colas_de_urgencia) hash_destruir(clinica->colas_de_urgencia);
+	if(clinica->colas_regulares) hash_destruir(clinica->colas_regulares);
 	free(clinica);
 }
 
 clinica_t* clinica_crear(){
 	clinica_t* clinica = malloc(sizeof(clinica_t));
 	if(!clinica) return NULL;	
+	
 	clinica->doctores = abb_crear(strcmp, destruir_campo_doctores); 
 	if(!clinica->doctores){
 		destruir_clinica(clinica);
 		return NULL;
 	}
+	
 	clinica->pacientes = hash_crear(free);
 	if(!clinica->pacientes){
 		destruir_clinica(clinica);
 		return NULL;
 	}
+	clinica->colas_de_urgencia = hash_crear(free);
+	if(!clinica->colas_de_urgencia){
+		destruir_clinica(clinica);
+		return NULL;
+	}
+
+	clinica->colas_regulares = hash_crear(free);
+	if(!clinica->colas_regulares){
+		destruir_clinica(clinica);
+		return NULL;
+	}
+
 	return clinica;
 }
 
