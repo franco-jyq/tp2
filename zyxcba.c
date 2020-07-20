@@ -23,7 +23,7 @@ void procesar_comando(const char* comando, const char** parametros) {
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
 
 	} else if (strcmp(comando, COMANDO_ATENDER) == 0) {
-
+											
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
 
 	} else {
