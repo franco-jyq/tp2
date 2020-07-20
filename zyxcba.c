@@ -17,28 +17,29 @@
 #define POSICION_ARCHIVO_PACIENTES 2
 
 
-/*
 
-void procesar_comando(const char* comando, const char** parametros) {
+
+void procesar_comando(const char* comando, const char** parametros, clinica_t* clinica){
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
 
 	} else if (strcmp(comando, COMANDO_ATENDER) == 0) {
-											
+		atender_siguiente(clinica, parametros[0]);
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
 
 	} else {
 
 	}
 }
-*/
+
+
 void eliminar_fin_linea(char* linea) {
 	size_t len = strlen(linea);
 	if (linea[len - 1] == '\n') {
 		linea[len - 1] = '\0';
 	}
 }
-/*
-void procesar_entrada() {
+
+void procesar_entrada(clinica_t* clinica) {
 	char* linea = NULL;
 	size_t c = 0;
 	while (getline(&linea, &c, stdin) > 0) {
@@ -50,15 +51,14 @@ void procesar_entrada() {
 			continue;	
 		}
 		char** parametros = split(campos[1], ',');
-		procesar_comando(campos[0], parametros);
+		procesar_comando(campos[0], parametros, clinica);
 		free_strv(parametros);
 		free_strv(campos);
 	}
 	free(linea);
 }
-*/
 
-/*
+/************************************************************************
 *
 *					lo nuestro
 *

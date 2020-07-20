@@ -11,8 +11,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-
-
 /*Struct campo_doctores*/
 
 struct campo_doctores{
@@ -102,6 +100,27 @@ bool agregar_paciente(clinica_t* clinica, char* paciente, char* anio){
 
 }
 
+bool atender_siguiente(clinica_t* clinica, char* doctor){
+	campo_doctores_t* campo = abb_obtener(clinica->doctores, doctor);
+	if(!campo){
+		printf(ENOENT_DOCTOR, doctor);
+		return true;
+	}
+	if(!lista_esta_vacia(hash_obtener(clinica->colas_de_urgencia, campo->especialidad))){
+		char* paciente = lista_borrar_primero(hash_obtener(clinica->colas_de_urgencia, campo->especialidad));
+		printf(PACIENTE_ATENDIDO, paciente);
+		printf(CANT_PACIENTES_ENCOLADOS, lista_largo(clinica->colas_de_urgencia, campo->especialidad));
+	}
+	else if(!heap_esta_vacio(hash_obtener(clinica->colas_regulares, campo->especialidad))){
+		char* paciente = heap_desencolar(hash_obtener(clinica->colas_regulares, campo->especialidad));
+		printf(PACIENTE_ATENDIDO, paciente);
+		printf(CANT_PACIENTES_ENCOLADOS, heap_cantidad(hash_obtener(clinica->colas_regulares, campo->especialidad)));
+	}
+	else{
+		printf(SIN_PACIENTES);
+	}
+	return true;
+}
 
 /*Funciones auxiliares*/
 
