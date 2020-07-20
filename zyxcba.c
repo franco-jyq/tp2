@@ -18,9 +18,6 @@
 #define URGENCIA "URGENTE"
 #define REGULAR "REGULAR"
 
-
-
-
 void procesar_comando(const char* comando, const char** parametros,clinica_t* clinica) {
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
 		if (!verificar_validez_turno(clinica,parametros[0],parametros[1],parametros[2])) return;
@@ -31,13 +28,14 @@ void procesar_comando(const char* comando, const char** parametros,clinica_t* cl
 			if (!sacar_turno_regular(clinica,parametros[0],parametros[1])) return;
 		}			
 	} else if (strcmp(comando, COMANDO_ATENDER) == 0) {
-
+		atender_siguiente(clinica, parametros[0]);
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
 
 	} else {
 		printf(ENOENT_CMD, comando);
 	}
 }
+
 
 bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char* especialidad,const char* urgencia){
 	if (!paciente_pertence(clinica,paciente)){
@@ -54,6 +52,7 @@ bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char*
 		}
 	return true;		
 }
+
 
 void eliminar_fin_linea(char* linea) {
 	size_t len = strlen(linea);
@@ -74,15 +73,14 @@ void procesar_entrada(clinica_t* clinica) {
 			continue;	
 		}
 		char** parametros = split(campos[1], ',');
-		procesar_comando(campos[0], parametros,clinica);
+		procesar_comando(campos[0], parametros, clinica);
 		free_strv(parametros);
 		free_strv(campos);
 	}
 	free(linea);
 }
 
-
-/*
+/************************************************************************
 *
 *					lo nuestro
 *
