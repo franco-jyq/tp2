@@ -8,13 +8,14 @@
 #include "strutil.h"
 #include "mensajes.h"
 #include <stdbool.h>
-#include<stdlib.h>
+#include <stdlib.h>
 #include <ctype.h>
 #define COMANDO_PEDIR_TURNO "PEDIR_TURNO"
 #define COMANDO_ATENDER "ATENDER_SIGUIENTE"
 #define COMANDO_INFORME "INFORME"
 #define POSICION_ARCHIVO_DOCTORES 1
 #define POSICION_ARCHIVO_PACIENTES 2
+
 
 /*
 
@@ -56,77 +57,30 @@ void procesar_entrada() {
 	free(linea);
 }
 */
+
 /*
 *
 *					lo nuestro
 *
 **************************************************************************/
-
-
-bool es_numero(char* str){
-	for (int x = 0; str[x] != '\0'; x++){
-		if (!isdigit(str[x])) return false;
-	}
-	return true;
+void* abortar_ejecucion(char* linea, char** campos, FILE* archivo, clinica_t* clinica){
+	free(linea);
+	free_strv(campos);
+	fclose(archivo);               // hay que hacer una funcion auxiliar que ejecute estas 4 lineas
+	destruir_clinica(clinica); // quizas meter todo aca
+	return NULL;
 }
 
-typedef struct campo_doctores{
-	char* especialidad;
-	int atendidos;
-} campo_doctores_t;
-
-campo_doctores_t* campo_doctores_crear(char* especialidad){
-	campo_doctores_t* campo_doctores = malloc(sizeof(campo_doctores_t));
-	if (!campo_doctores) return NULL;
-	campo_doctores->especialidad = strdup(especialidad);
-	if (!campo_doctores->especialidad){
-		free(campo_doctores);
-		return NULL;
-	}
-	campo_doctores->atendidos = 0;
-	return campo_doctores;
-}
-
-void destruir_campo_doctores(void* campo_doctores){
-	free(((campo_doctores_t*)campo_doctores)->especialidad);
-	free((campo_doctores_t*)campo_doctores);
-}
-
-typedef struct estructuras{
-	abb_t* doctores;
-	hash_t* pacientes;
-} estructuras_t;
-
-void destruir_estructura(estructuras_t* estructura){	
-	if(estructura->pacientes) hash_destruir(estructura->pacientes);
-	if(estructura->doctores) abb_destruir(estructura->doctores);
-	free(estructura);
-}
-
-estructuras_t* estructuras_crear(){
-	estructuras_t* estructura = malloc(sizeof(estructuras_t));
-	if(!estructura) return NULL;	
-	estructura->doctores = abb_crear(strcmp, destruir_campo_doctores); 
-	if(!estructura->doctores){
-		destruir_estructura(estructura);
-		return NULL;
-	}
-	estructura->pacientes = hash_crear(free);
-	if(!estructura->pacientes){
-		destruir_estructura(estructura);
-		return NULL;
-	}
-	return estructura;
-}
-
-
-estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
+clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	 
 	FILE*  archivo = fopen(archivo_doctores, "r");
 	if(!archivo) return NULL;
 
-	estructuras_t* estructura = estructuras_crear();
-	if(!estructura) return NULL;
+	clinica_t* clinica = clinica_crear();
+	if(!clinica){
+		fclose(archivo);
+		return NULL;
+	}
 	
 	char* linea = NULL;
 	size_t capacidad = 0;
@@ -134,19 +88,17 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	while(getline(&linea, &capacidad, archivo) > 0){
 		char** campos = split(linea, ',');
 		if(!campos){
-			destruir_estructura(estructura);
-			return NULL;
+			return abortar_ejecucion(linea, campos, archivo, clinica);
 		}
 		eliminar_fin_linea(campos[1]);
 		campo_doctores_t* campo_doctores = campo_doctores_crear(campos[1]);
 		if(!campo_doctores){
-			destruir_estructura(estructura);
-			return NULL;
+			return abortar_ejecucion(linea, campos, archivo, clinica);
 		}
-		if(!abb_guardar(estructura->doctores, campos[0], campo_doctores)){
-			destruir_estructura(estructura);
+		if(agregar_doctor(clinica, campos[0], campo_doctores)){
 			destruir_campo_doctores(campo_doctores);
-			return NULL;
+			return abortar_ejecucion(linea, campos, archivo, clinica);
+
 		}
 		free_strv(campos);
 	}
@@ -155,7 +107,7 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 
 	FILE*  archivo2 = fopen(archivo_pacientes, "r");
 	if(!archivo){
-		destruir_estructura(estructura);
+		destruir_clinica(clinica);
 		return NULL;
 	}
 	linea = NULL;
@@ -164,58 +116,25 @@ estructuras_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	while(getline(&linea, &capacidad, archivo2) > 0){
 		char** campos = split(linea, ',');
 		if(!campos || !es_numero(campos[1])){ // sin todas esas lineas se pierde memoria
-			free(linea);
-			free_strv(campos);
-			fclose(archivo2);               // hay que hacer una funcion auxiliar que ejecute estas 4 lineas
-			destruir_estructura(estructura); // quizas meter todo aca
-			return NULL;
+			return abortar_ejecucion(linea, campos, archivo2, clinica);
 		}
-		int* numero = malloc(sizeof(int));
-		if(!numero){
-			destruir_estructura(estructura);
-			return NULL;
-		}
-		*numero = atoi(campos[1]);
-		if(!hash_guardar(estructura->pacientes, campos[0], numero)){
-			destruir_estructura(estructura);
-			free(numero);
-			return NULL;
+		if(!agregar_paciente(clinica, campos[0], campos[1])){
+			return abortar_ejecucion(linea, campos, archivo2, clinica);
 		}
 		free_strv(campos);
 	}
 	fclose(archivo2);
 	free(linea);
-	return estructura;
-}
-
-// funciones auxiliares para pruebas
-// imprime todo el abb de doctores en orden
-bool visitar(const char* clave, void* dato, void* extra){
-    printf("doctor: %s especialidad: %s \n", clave,((campo_doctores_t*)dato)->especialidad);
-    return true;
+	return clinica;
 }
 
 int main(int argc, char** argv){ 	
 	if (argc != 3) return 1;
 	char* archivo_doctores = argv[POSICION_ARCHIVO_DOCTORES];
 	char* archivo_pacientes = argv[POSICION_ARCHIVO_PACIENTES];
-	estructuras_t* estructura = leo_archivos(archivo_doctores, archivo_pacientes);
-	if (!estructura) return 1;
-
-	// imprime todo el abb de doctores 
-	abb_in_order(estructura->doctores,visitar,NULL);
-
-	// imprime todo el hash de pacientes
-	hash_iter_t* iter = hash_iter_crear(estructura->pacientes);
-	while (!hash_iter_al_final(iter)){
-		const char* clave = hash_iter_ver_actual(iter);
-		printf("paciente: %s anio: %d \n",clave,*(int*)hash_obtener(estructura->pacientes,clave));
-		hash_iter_avanzar(iter);
-	}
-	hash_iter_destruir(iter);
-	
-
-	destruir_estructura(estructura);		
+	clinica_t* clinica = leo_archivos(archivo_doctores, archivo_pacientes);
+	if (!clinica) return 1;
+	destruir_clinica(clinica);		
 	return 0;
 }
 
