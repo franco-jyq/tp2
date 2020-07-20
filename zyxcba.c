@@ -15,30 +15,54 @@
 #define COMANDO_INFORME "INFORME"
 #define POSICION_ARCHIVO_DOCTORES 1
 #define POSICION_ARCHIVO_PACIENTES 2
+#define URGENCIA "URGENTE"
+#define REGULAR "REGULAR"
 
 
-/*
 
-void procesar_comando(const char* comando, const char** parametros) {
+
+void procesar_comando(const char* comando, const char** parametros,clinica_t* clinica) {
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
-
+		if (!verificar_validez_turno(clinica,parametros[0],parametros[1],parametros[2])) return;
+		if (strcmp(parametros[2],URGENCIA) == 0){
+			if (!sacar_turno_urgente(clinica,parametros[0],parametros[1])) return;
+		}
+		if (strcmp(parametros[2],REGULAR) == 0){
+			if (!sacar_turno_regular(clinica,parametros[0],parametros[1])) return;
+		}			
 	} else if (strcmp(comando, COMANDO_ATENDER) == 0) {
 
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
 
 	} else {
-
+		printf(ENOENT_CMD, comando);
 	}
 }
-*/
+
+bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char* especialidad,const char* urgencia){
+	if (!paciente_pertence(clinica,paciente)){
+			printf(ENOENT_PACIENTE,paciente);
+			return false;
+		}
+		if (!especialidad_pertenece(clinica,especialidad)){
+			printf(ENOENT_ESPECIALIDAD,especialidad);
+			return false;
+		}
+		if (strcmp(urgencia,URGENCIA) != 0 || strcmp(urgencia,REGULAR) != 0){
+			printf(ENOENT_URGENCIA,urgencia);
+			return false; 
+		}
+	return true;		
+}
+
 void eliminar_fin_linea(char* linea) {
 	size_t len = strlen(linea);
 	if (linea[len - 1] == '\n') {
 		linea[len - 1] = '\0';
 	}
 }
-/*
-void procesar_entrada() {
+
+void procesar_entrada(clinica_t* clinica) {
 	char* linea = NULL;
 	size_t c = 0;
 	while (getline(&linea, &c, stdin) > 0) {
@@ -50,13 +74,13 @@ void procesar_entrada() {
 			continue;	
 		}
 		char** parametros = split(campos[1], ',');
-		procesar_comando(campos[0], parametros);
+		procesar_comando(campos[0], parametros,clinica);
 		free_strv(parametros);
 		free_strv(campos);
 	}
 	free(linea);
 }
-*/
+
 
 /*
 *
@@ -95,10 +119,13 @@ clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 		if(!campo_doctores){
 			return abortar_ejecucion(linea, campos, archivo, clinica);
 		}
-		if(agregar_doctor(clinica, campos[0], campo_doctores)){
+
+		if(!agregar_doctor(clinica, campos[0], campo_doctores)){
 			destruir_campo_doctores(campo_doctores);
 			return abortar_ejecucion(linea, campos, archivo, clinica);
-
+		}
+		if (!agregar_especialidad(clinica,campos[1])){
+			return abortar_ejecucion(linea, campos, archivo, clinica);
 		}
 		free_strv(campos);
 	}
@@ -134,6 +161,7 @@ int main(int argc, char** argv){
 	char* archivo_pacientes = argv[POSICION_ARCHIVO_PACIENTES];
 	clinica_t* clinica = leo_archivos(archivo_doctores, archivo_pacientes);
 	if (!clinica) return 1;
+	procesar_entrada(clinica);
 	destruir_clinica(clinica);		
 	return 0;
 }
