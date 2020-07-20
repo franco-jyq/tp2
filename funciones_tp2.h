@@ -9,6 +9,7 @@
 
 typedef struct clinica clinica_t;
 typedef struct campo_doctores campo_doctores_t;
+typedef struct campo_pacientes campo_pacientes_t;
 
 /*******************************************
 * 
@@ -73,7 +74,14 @@ Post: Se devolvio true si representa a un numero entero, false en caso contrario
 */
 bool es_numero(char* str);
 
-
+campo_pacientes_t* campo_pacientes_crear (char* nombre,int antiguedad);
+void campo_pacientes_destruir (void* campo_pacientes);
+bool agregar_especialidad (clinica_t* clinica,const char* especialidad);
+bool paciente_pertenece (clinica_t* clinica,const char* paciente);
+bool especialidad_pertence (clinica_t* clinica,const char* especialidad);
+bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* especialidad);
+int cmp_pacientes(const void* paciente1,const void* paciente2);
+bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* especialidad);
 
 #endif 
 
