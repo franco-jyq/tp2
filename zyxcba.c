@@ -18,15 +18,23 @@
 #define URGENCIA "URGENTE"
 #define REGULAR "REGULAR"
 
-void procesar_comando(const char* comando, const char** parametros,clinica_t* clinica) {
+bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char* especialidad,const char* urgencia);
+
+void procesar_comando(const char* comando, char** parametros,clinica_t* clinica) {
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
+		if (!parametros[0] || !parametros[1] || !parametros[2]){
+		printf(ENOENT_PARAMS,COMANDO_PEDIR_TURNO);
+		return;
+		}
 		if (!verificar_validez_turno(clinica,parametros[0],parametros[1],parametros[2])) return;
 		if (strcmp(parametros[2],URGENCIA) == 0){
 			if (!sacar_turno_urgente(clinica,parametros[0],parametros[1])) return;
 		}
 		if (strcmp(parametros[2],REGULAR) == 0){
 			if (!sacar_turno_regular(clinica,parametros[0],parametros[1])) return;
-		}			
+		}
+		printf(PACIENTE_ENCOLADO,parametros[0]);
+		printf(CANT_PACIENTES_ENCOLADOS,cantidad_pacientes_especialidad(clinica,parametros[1]),parametros[1]);			
 	} else if (strcmp(comando, COMANDO_ATENDER) == 0) {
 		atender_siguiente(clinica, parametros[0]);
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
@@ -38,15 +46,15 @@ void procesar_comando(const char* comando, const char** parametros,clinica_t* cl
 
 
 bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char* especialidad,const char* urgencia){
-	if (!paciente_pertence(clinica,paciente)){
+	if (!paciente_pertenece (clinica,paciente)){
 			printf(ENOENT_PACIENTE,paciente);
 			return false;
 		}
-		if (!especialidad_pertenece(clinica,especialidad)){
+	if (!especialidad_pertence(clinica,especialidad)){
 			printf(ENOENT_ESPECIALIDAD,especialidad);
 			return false;
 		}
-		if (strcmp(urgencia,URGENCIA) != 0 || strcmp(urgencia,REGULAR) != 0){
+	if (strcmp(urgencia,URGENCIA) != 0 && strcmp(urgencia,REGULAR) != 0){
 			printf(ENOENT_URGENCIA,urgencia);
 			return false; 
 		}
@@ -80,23 +88,22 @@ void procesar_entrada(clinica_t* clinica) {
 	free(linea);
 }
 
-/************************************************************************
-*
-*					lo nuestro
-*
-**************************************************************************/
+
 void* abortar_ejecucion(char* linea, char** campos, FILE* archivo, clinica_t* clinica){
 	free(linea);
 	free_strv(campos);
-	fclose(archivo);               // hay que hacer una funcion auxiliar que ejecute estas 4 lineas
-	destruir_clinica(clinica); // quizas meter todo aca
+	fclose(archivo);               
+	destruir_clinica(clinica); 
 	return NULL;
 }
 
 clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	 
 	FILE*  archivo = fopen(archivo_doctores, "r");
-	if(!archivo) return NULL;
+	if(!archivo){
+		printf(ENOENT_ARCHIVO,archivo_doctores);
+		return NULL;
+	} 
 
 	clinica_t* clinica = clinica_crear();
 	if(!clinica){
@@ -129,9 +136,10 @@ clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	}
 	free(linea);
 	fclose(archivo);
-
+	
 	FILE*  archivo2 = fopen(archivo_pacientes, "r");
 	if(!archivo){
+		printf(ENOENT_ARCHIVO,archivo_pacientes);
 		destruir_clinica(clinica);
 		return NULL;
 	}
@@ -140,7 +148,9 @@ clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 	
 	while(getline(&linea, &capacidad, archivo2) > 0){
 		char** campos = split(linea, ',');
-		if(!campos || !es_numero(campos[1])){ // sin todas esas lineas se pierde memoria
+		eliminar_fin_linea(campos[1]);
+		if(!campos || !es_numero(campos[1])){
+			printf(ENOENT_ANIO,campos[1]);
 			return abortar_ejecucion(linea, campos, archivo2, clinica);
 		}
 		if(!agregar_paciente(clinica, campos[0], campos[1])){
@@ -154,7 +164,10 @@ clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes){
 }
 
 int main(int argc, char** argv){ 	
-	if (argc != 3) return 1;
+	if (argc != 3){
+		printf(ENOENT_CANT_PARAMS);
+		return 1;
+	} 
 	char* archivo_doctores = argv[POSICION_ARCHIVO_DOCTORES];
 	char* archivo_pacientes = argv[POSICION_ARCHIVO_PACIENTES];
 	clinica_t* clinica = leo_archivos(archivo_doctores, archivo_pacientes);

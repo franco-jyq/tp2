@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-=======
+
 /*Struct campo_paciente */
 
 struct campo_pacientes {
@@ -72,15 +72,17 @@ void destruir_clinica(clinica_t* clinica){
 	if(clinica->pacientes) hash_destruir(clinica->pacientes);
 	if(clinica->doctores) abb_destruir(clinica->doctores);
 	if(clinica->colas_de_urgencia){
-		hash_iter_t* iter = hash_iter_crear(clinica->colas_regulares);
+		hash_iter_t* iter = hash_iter_crear(clinica->colas_de_urgencia);
 		while (!hash_iter_al_final(iter)){
 			const char* actual = hash_iter_ver_actual(iter);
-			lista_t* lista = hash_obtener(clinica->colas_regulares,actual);
+			lista_t* lista = hash_obtener(clinica->colas_de_urgencia,actual);
 			lista_destruir(lista,free);
 			hash_iter_avanzar(iter);
 		}
+		hash_iter_destruir(iter);
 		hash_destruir(clinica->colas_de_urgencia);
 	}
+	
 	if(clinica->colas_regulares){
 		hash_iter_t* iter = hash_iter_crear(clinica->colas_regulares);
 		while (!hash_iter_al_final(iter)){
@@ -89,6 +91,7 @@ void destruir_clinica(clinica_t* clinica){
 			heap_destruir(heap,campo_pacientes_destruir);
 			hash_iter_avanzar(iter);
 		}
+		hash_iter_destruir(iter);
 		hash_destruir(clinica->colas_regulares);
 	}
 	if(clinica->especialidades) hash_destruir(clinica->especialidades);
@@ -160,6 +163,24 @@ bool especialidad_pertence (clinica_t* clinica,const char* especialidad){
 	return hash_pertenece(clinica->especialidades,especialidad);
 }
 
+size_t cantidad_pacientes_especialidad(clinica_t* clinica,const char* especialidad){
+	size_t largo1,largo2;
+
+	lista_t* lista = (hash_obtener(clinica->colas_de_urgencia,especialidad));
+	if (!lista) largo1 = 0;
+	else {
+		largo1 = lista_largo(lista);
+	}
+		
+	heap_t* heap = hash_obtener(clinica->colas_regulares,especialidad);
+	if (!heap) largo2 = 0;
+	else {
+		largo2 = heap_cantidad(heap);
+	}
+	
+	return largo1 + largo2;
+}
+
 bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* especialidad){
 	if (!hash_pertenece(clinica->colas_de_urgencia,especialidad)){
 		lista_t* lista = lista_crear();
@@ -171,38 +192,10 @@ bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* es
 	}
 	lista_t* lista = hash_obtener(clinica->colas_de_urgencia,especialidad);
 	if (!lista) return false;
-	char* paciente = strdup(paciente);
-	if (!paciente) return false;
-	if (!lista_insertar_ultimo(lista,paciente)) return false;
+	char* copia_paciente = strdup(paciente);
+	if (!copia_paciente) return false;
+	if (!lista_insertar_ultimo(lista,copia_paciente)) return false;
 	return true;
-}
-
-bool atender_siguiente(clinica_t* clinica, char* doctor){
-	campo_doctores_t* campo = abb_obtener(clinica->doctores, doctor);
-	if(!campo){
-		printf(ENOENT_DOCTOR, doctor);
-		return true;
-	}
-	if(!lista_esta_vacia(hash_obtener(clinica->colas_de_urgencia, campo->especialidad))){
-		char* paciente = lista_borrar_primero(hash_obtener(clinica->colas_de_urgencia, campo->especialidad));
-		printf(PACIENTE_ATENDIDO, paciente);
-		printf(CANT_PACIENTES_ENCOLADOS, lista_largo(clinica->colas_de_urgencia, campo->especialidad));
-	}
-	else if(!heap_esta_vacio(hash_obtener(clinica->colas_regulares, campo->especialidad))){
-		char* paciente = heap_desencolar(hash_obtener(clinica->colas_regulares, campo->especialidad));
-		printf(PACIENTE_ATENDIDO, paciente);
-		printf(CANT_PACIENTES_ENCOLADOS, heap_cantidad(hash_obtener(clinica->colas_regulares, campo->especialidad)));
-	}
-	else{
-		printf(SIN_PACIENTES);
-	}
-	return true;
-}
-
-int cmp_pacientes(const void* paciente1,const void* paciente2){
-	if (((campo_pacientes_t*)paciente1)->antiguedad < ((campo_pacientes_t*)paciente2)->antiguedad) return 1;
-	if (((campo_pacientes_t*)paciente1)->antiguedad > ((campo_pacientes_t*)paciente2)->antiguedad) return -1;
-	return 0;
 }
 
 bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* especialidad){
@@ -218,10 +211,41 @@ bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* es
 	if (!heap) return false;
 	char* nombre = strdup(paciente);
 	if (!nombre) return false;
-	campo_pacientes_t* campo_paciente = campo_pacientes_crear(paciente,*(int*)hash_obtener(clinica->pacientes,nombre)); 
-	if (heap_encolar(heap,campo_paciente)) return false;
+	campo_pacientes_t* campo_paciente = campo_pacientes_crear(nombre,*(int*)hash_obtener(clinica->pacientes,nombre)); 
+	if (!heap_encolar(heap,campo_paciente)) return false;
 	return true;
 }
+
+bool atender_siguiente(clinica_t* clinica,const char* doctor){
+	campo_doctores_t* campo = abb_obtener(clinica->doctores, doctor);
+	if(!campo){
+		printf(ENOENT_DOCTOR, doctor);
+		return true;
+	}
+	if(!lista_esta_vacia(hash_obtener(clinica->colas_de_urgencia, campo->especialidad))){ //rompe si la lista no existe
+		char* paciente = lista_borrar_primero(hash_obtener(clinica->colas_de_urgencia, campo->especialidad));
+		printf(PACIENTE_ATENDIDO, paciente);
+		printf(CANT_PACIENTES_ENCOLADOS,cantidad_pacientes_especialidad(clinica,campo->especialidad),campo->especialidad);
+		free(paciente);
+	}
+	else if(!heap_esta_vacio(hash_obtener(clinica->colas_regulares, campo->especialidad))){ //rompe si el heap no existe
+		campo_pacientes_t* paciente = heap_desencolar(hash_obtener(clinica->colas_regulares, campo->especialidad));
+		printf(PACIENTE_ATENDIDO, paciente->nombre);
+		printf(CANT_PACIENTES_ENCOLADOS, cantidad_pacientes_especialidad(clinica,campo->especialidad),campo->especialidad);
+		campo_pacientes_destruir(paciente);
+	}
+	else{
+		printf(SIN_PACIENTES);
+	}
+	return true;
+}
+
+int cmp_pacientes(const void* paciente1,const void* paciente2){
+	if (((campo_pacientes_t*)paciente1)->antiguedad < ((campo_pacientes_t*)paciente2)->antiguedad) return 1;
+	if (((campo_pacientes_t*)paciente1)->antiguedad > ((campo_pacientes_t*)paciente2)->antiguedad) return -1;
+	return 0;
+}
+
 
 /*Funciones auxiliares*/
 
