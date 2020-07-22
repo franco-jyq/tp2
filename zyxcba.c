@@ -37,6 +37,10 @@ void procesar_comando(const char* comando, char** parametros,clinica_t* clinica)
 		printf(PACIENTE_ENCOLADO,parametros[0]);
 		printf(CANT_PACIENTES_ENCOLADOS,cantidad_pacientes_especialidad(clinica,parametros[1]),parametros[1]);			
 	}else if (strcmp(comando, COMANDO_ATENDER) == 0) {
+		if (!parametros[0] || !parametros[1]){
+		printf(ENOENT_PARAMS,COMANDO_PEDIR_TURNO);
+		return;
+		}
 		char* paciente = NULL;
 		char* especialidad = NULL;
 		if(atender_siguiente(clinica, parametros[0], paciente, especialidad)){

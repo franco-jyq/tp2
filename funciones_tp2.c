@@ -218,23 +218,19 @@ bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* es
 
 bool verificar_urgencias(clinica_t* clinica, char* especialidad, char* copia_paciente_urgente){
 	lista_t* lista = hash_obtener(clinica->colas_de_urgencia, especialidad);
-	if(!lista) return false;
-	if(!lista_esta_vacia(lista)){
-		char* paciente_urgente = lista_borrar_primero(lista);
-		copia_paciente_urgente = paciente_urgente;
-		free(paciente_urgente);
-	}
+	if(!lista || !lista_esta_vacia(lista)) return false;
+	char* paciente_urgente = lista_borrar_primero(lista);
+	copia_paciente_urgente = paciente_urgente;
+	free(paciente_urgente);
 	return true;
 }
 
 bool verificar_regulares(clinica_t* clinica, char* especialidad, char* copia_paciente_regular){
 	heap_t* heap = hash_obtener(clinica->colas_regulares, especialidad);
-	if(!heap) return false;
-	if(!heap_esta_vacio(heap)){
-		campo_pacientes_t* campo_paciente = heap_desencolar(heap);
-		copia_paciente_regular = campo_paciente->nombre;
-		campo_pacientes_destruir(campo_paciente);
-	}
+	if(!heap || !heap_esta_vacio(heap)) return false;
+	campo_pacientes_t* campo_paciente = heap_desencolar(heap);
+	copia_paciente_regular = campo_paciente->nombre;
+	campo_pacientes_destruir(campo_paciente);
 	return true;
 }
 
