@@ -220,7 +220,7 @@ bool verificar_urgencias(clinica_t* clinica, char* especialidad, char** copia_pa
 	lista_t* lista = hash_obtener(clinica->colas_de_urgencia, especialidad);
 	if(!lista || lista_esta_vacia(lista)) return false;
 	char* paciente_urgente = lista_borrar_primero(lista);
-	*copia_paciente_urgente = paciente_urgente;
+	*copia_paciente_urgente = strdup(paciente_urgente);
 	free(paciente_urgente);
 	return true;
 }
@@ -229,20 +229,20 @@ bool verificar_regulares(clinica_t* clinica, char* especialidad, char** copia_pa
 	heap_t* heap = hash_obtener(clinica->colas_regulares, especialidad);
 	if(!heap || heap_esta_vacio(heap)) return false;
 	campo_pacientes_t* campo_paciente = heap_desencolar(heap);
-	*copia_paciente_regular = campo_paciente->nombre;
+	*copia_paciente_regular = strdup(campo_paciente->nombre);
 	campo_pacientes_destruir(campo_paciente);
 	return true;
 }
 
-bool atender_siguiente(clinica_t* clinica,const char* doctor, char** paciente, char** especialidad){
-	
+bool atender_siguiente(clinica_t* clinica, const char* doctor, char** paciente, char** especialidad){
+
 	campo_doctores_t* campo_doctor = abb_obtener(clinica->doctores, doctor);
 	if(!campo_doctor)return false;
 	*especialidad = campo_doctor->especialidad;
 
-	if(!verificar_urgencias(clinica, *especialidad, paciente)) return false;
-	else if(!verificar_regulares(clinica, *especialidad, paciente)) return false;
-	
+	if(!verificar_urgencias(clinica, *especialidad, paciente)){
+		if(!verificar_regulares(clinica, *especialidad, paciente)) return false;
+	}
 	campo_doctor->atendidos ++;
 	return true;
 }
