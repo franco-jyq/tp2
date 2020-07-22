@@ -117,7 +117,7 @@ bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* es
 bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* especialidad);
 
 /*Atiende si es que hay al siguiente paciente*/
-bool atender_siguiente(clinica_t* clinica,const char* doctor, char* paciente, char* especialidad);
+bool atender_siguiente(clinica_t* clinica,const char* doctor, char** paciente, char** especialidad);
 
 /*******************************************
 *

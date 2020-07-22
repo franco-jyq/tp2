@@ -43,7 +43,7 @@ void procesar_comando(const char* comando, char** parametros,clinica_t* clinica)
 		}
 		char* paciente = NULL;
 		char* especialidad = NULL;
-		if(atender_siguiente(clinica, parametros[0], paciente, especialidad)){
+		if(atender_siguiente(clinica, parametros[0], &paciente, &especialidad)){
 			
 			if(paciente != NULL){
 				printf(PACIENTE_ATENDIDO, paciente);
