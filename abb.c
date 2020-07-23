@@ -205,10 +205,10 @@ void abb_in_order(abb_t *arbol, bool visitar(const char *, void *, void *), void
  void _abb_in_order_por_rango(abb_t* arbol, nodo_abb_t* actual, char* inicio, char* fin, lista_t* lista){
     if(!actual) return;
     
-    if(inicio != NULL && (arbol->cmp(actual->clave, inicio) < 0)){
+    if(arbol->cmp(inicio,"") != 0 && (arbol->cmp(actual->clave, inicio) < 0)){
         _abb_in_order_por_rango(arbol, actual->der, inicio, fin, lista);
     }
-     else if( fin != NULL && (arbol->cmp(actual->clave, fin) > 0)){
+     else if(arbol->cmp(fin,"") != 0 && (arbol->cmp(actual->clave, fin) > 0)){
         _abb_in_order_por_rango(arbol, actual->izq, inicio, fin, lista);
      }
     else{

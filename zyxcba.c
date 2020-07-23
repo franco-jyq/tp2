@@ -52,9 +52,9 @@ void procesar_comando(const char* comando, char** parametros, clinica_t* clinica
 				printf(PACIENTE_ATENDIDO, paciente);
 				printf(CANT_PACIENTES_ENCOLADOS, cantidad_pacientes_especialidad(clinica, especialidad), especialidad);
 				free(paciente);
-			}else(printf(SIN_PACIENTES));	
-		
-		}else(printf(ENOENT_DOCTOR, parametros[0]));
+			}	
+		}else if (especialidad != NULL && cantidad_pacientes_especialidad(clinica,especialidad) == 0) printf(SIN_PACIENTES);
+		else(printf(ENOENT_DOCTOR, parametros[0]));
 
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
 		if(!parametros[0] || !parametros[1]){
