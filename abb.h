@@ -2,6 +2,7 @@
 #define ABB_H
 #include<stdbool.h>
 #include <stddef.h>
+#include"lista.h"
 
 /*Definicion del struct del abb*/
 typedef struct abb abb_t;
@@ -69,6 +70,9 @@ visitar hasta que se le indique o hasta pasar por todas las claves
 Pre: Se creo el abb
 Post: Se itero ejecutando visitar hasta el elemento indicado */
 void abb_in_order(abb_t *arbol, bool visitar(const char *, void *, void *), void *extra);
+
+/**/
+lista_t* abb_in_order_por_rango(abb_t* arbol, char* inicio, char* fin);
 
 /*******************************************************************************
 *

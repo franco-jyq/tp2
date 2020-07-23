@@ -119,6 +119,13 @@ bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* es
 /*Atiende si es que hay al siguiente paciente*/
 bool atender_siguiente(clinica_t* clinica,const char* doctor, char** paciente, char** especialidad);
 
+lista_t* generar_informe(clinica_t* clinica, char* inicio, char* fin);
+
+/**/
+char* obtener_especialidad(clinica_t* clinica, char* doctor);
+
+/**/
+size_t obtener_atendidos(clinica_t* clinica, char* doctor);
 /*******************************************
 *
 *           Funciones auxiliares

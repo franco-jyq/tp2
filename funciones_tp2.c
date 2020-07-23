@@ -37,7 +37,7 @@ void campo_pacientes_destruir (void* campo_pacientes){
 
 struct campo_doctores{
 	char* especialidad;
-	int atendidos;
+	size_t atendidos;
 };
 
 campo_doctores_t* campo_doctores_crear(char* especialidad){
@@ -254,11 +254,26 @@ int cmp_pacientes(const void* paciente1,const void* paciente2){
 }
 
 
+lista_t* generar_informe(clinica_t* clinica, char* inicio, char* fin){
+	return abb_in_order_por_rango(clinica->doctores, inicio, fin);	
+}
+
+char* obtener_especialidad(clinica_t* clinica, char* doctor){
+	campo_doctores_t* campo = abb_obtener(clinica->doctores, doctor);
+	return campo->especialidad;
+}
+
+
+size_t obtener_atendidos(clinica_t* clinica, char* doctor){
+	campo_doctores_t* campo = abb_obtener(clinica->doctores, doctor);
+	return campo->atendidos;
+}
+
 /*Funciones auxiliares*/
 
 bool es_numero(char* str){
 	for (int x = 0; str[x] != '\0'; x++){
-		if (isdigit(str[x]) == 0) return false;
+		if (isdigit(str[x]) == 0 && str[x] != ' ') return false;
 	}
 	return true;
 }

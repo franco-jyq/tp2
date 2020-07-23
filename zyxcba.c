@@ -2,6 +2,7 @@
 #include "hash.h"
 #include "heap.h"
 #include "abb.h"
+#include "lista.h"
 #include <stdio.h>
 #include <string.h>
 #include "funciones_tp2.h"
@@ -20,12 +21,14 @@
 
 bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char* especialidad,const char* urgencia);
 
+void imprimir_doctores(lista_t* lista, clinica_t* clinica);
+
 void procesar_comando(const char* comando, char** parametros, clinica_t* clinica) {
 	
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
 		if (!parametros[0] || !parametros[1] || !parametros[2]){
-		printf(ENOENT_PARAMS,COMANDO_PEDIR_TURNO);
-		return;
+			printf(ENOENT_PARAMS,COMANDO_PEDIR_TURNO);
+			return;
 		}
 		if (!verificar_validez_turno(clinica,parametros[0],parametros[1],parametros[2])) return;
 		if (strcmp(parametros[2],URGENCIA) == 0){
@@ -54,10 +57,30 @@ void procesar_comando(const char* comando, char** parametros, clinica_t* clinica
 		}else(printf(ENOENT_DOCTOR, parametros[0]));
 
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
-
+		if(!parametros[0] || !parametros[1]){
+			printf(ENOENT_PARAMS, COMANDO_INFORME);
+		}
+		else{
+			lista_t* listado_doctores = generar_informe(clinica, parametros[0], parametros[1]);
+			imprimir_doctores(listado_doctores, clinica);
+		}
 	} else {
 		printf(ENOENT_CMD, comando);
 	}
+}
+
+void imprimir_doctores(lista_t* lista, clinica_t* clinica){
+	if(!lista) return;
+	printf(DOCTORES_SISTEMA, lista_largo(lista));
+	size_t cont = 1;
+	while(!lista_esta_vacia(lista)){
+		char* doctor = lista_borrar_primero(lista);
+		char* especialidad = obtener_especialidad(clinica, doctor);
+		size_t atendidos = obtener_atendidos(clinica, doctor);
+		printf(INFORME_DOCTOR, cont, doctor, especialidad, atendidos);
+		cont++;
+	}
+	lista_destruir(lista, NULL);
 }
 
 

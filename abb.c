@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "abb.h"
 #include "pila.h"
+#include "lista.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -199,6 +200,30 @@ bool _abb_in_order(nodo_abb_t* actual, bool visitar(const char *, void *, void *
 
 void abb_in_order(abb_t *arbol, bool visitar(const char *, void *, void *), void *extra){
     _abb_in_order(arbol->raiz, visitar, extra);
+}
+
+ void _abb_in_order_por_rango(abb_t* arbol, nodo_abb_t* actual, char* inicio, char* fin, lista_t* lista){
+    if(!actual) return;
+    
+    if(inicio != NULL && (arbol->cmp(actual->clave, inicio) < 0)){
+        _abb_in_order_por_rango(arbol, actual->der, inicio, fin, lista);
+    }
+     else if( fin != NULL && (arbol->cmp(actual->clave, fin) > 0)){
+        _abb_in_order_por_rango(arbol, actual->izq, inicio, fin, lista);
+     }
+    else{
+        _abb_in_order_por_rango(arbol, actual->izq, inicio, fin, lista);
+        lista_insertar_ultimo(lista, actual->clave);
+        _abb_in_order_por_rango(arbol, actual->der, inicio, fin, lista);
+    }
+    return;
+ }
+
+lista_t*  abb_in_order_por_rango(abb_t* arbol, char* inicio, char* fin){
+    lista_t* lista = lista_crear();
+    if(!lista) return NULL;
+    _abb_in_order_por_rango(arbol, arbol->raiz, inicio, fin, lista);
+    return lista;
 }
 
 /*************************************************************************************
