@@ -20,16 +20,14 @@ void imprimir_doctores(lista_t* lista, clinica_t* clinica);
 void procesar_comando(const char* comando, char** parametros, clinica_t* clinica);
 void procesar_entrada(clinica_t* clinica);
 void* abortar_ejecucion(char* linea, char** campos, FILE* archivo, clinica_t* clinica);
-clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes); 
+clinica_t* leo_archivos(char* archivo_doctores, char* archivo_pacientes);
+bool verificar_parametros (const char* comando,char* parametro1,char* parametro2,char* parametro3); 
 
 
 
 void procesar_comando(const char* comando, char** parametros, clinica_t* clinica) {	
 	if (strcmp(comando, COMANDO_PEDIR_TURNO) == 0) {
-		if (!parametros[0] || !parametros[1] || !parametros[2]){
-			printf(ENOENT_PARAMS,COMANDO_PEDIR_TURNO);
-			return;
-		}
+		if (!verificar_parametros(comando,parametros[0],parametros[1],parametros[2])) return;
 		if (!verificar_validez_turno(clinica,parametros[0],parametros[1],parametros[2])) return;
 		if (strcmp(parametros[2],URGENCIA) == 0) {
 			if (!sacar_turno_urgente(clinica,parametros[0],parametros[1])) return;
@@ -40,26 +38,20 @@ void procesar_comando(const char* comando, char** parametros, clinica_t* clinica
 		printf(PACIENTE_ENCOLADO,parametros[0]);
 		printf(CANT_PACIENTES_ENCOLADOS,cantidad_pacientes_especialidad(clinica,parametros[1]),parametros[1]);			
 	} else if (strcmp(comando, COMANDO_ATENDER) == 0) {
-		if (!parametros[0]) {
-			printf(ENOENT_PARAMS,COMANDO_ATENDER);
-			return;
-		}
+		if (!verificar_parametros(comando,parametros[0],NULL,NULL)) return;
 		char* paciente = NULL;
 		char* especialidad = NULL;
-		if (atender_siguiente(clinica, parametros[0], &paciente, &especialidad)) {
-			
+		if (atender_siguiente(clinica, parametros[0], &paciente, &especialidad)) {			
 			if (paciente != NULL) {
 				printf(PACIENTE_ATENDIDO, paciente);
 				printf(CANT_PACIENTES_ENCOLADOS, cantidad_pacientes_especialidad(clinica, especialidad), especialidad);
 				free(paciente);
 			}	
-		}else if (especialidad != NULL && cantidad_pacientes_especialidad(clinica,especialidad) == 0) printf(SIN_PACIENTES);
+		} else if (especialidad != NULL && cantidad_pacientes_especialidad(clinica,especialidad) == 0) printf(SIN_PACIENTES);
 		else (printf(ENOENT_DOCTOR, parametros[0]));
 
 	} else if (strcmp(comando, COMANDO_INFORME) == 0) {
-		if (!parametros[0] || !parametros[1]){
-			printf(ENOENT_PARAMS, COMANDO_INFORME);
-		}
+		if (!verificar_parametros(comando,parametros[0],parametros[1],NULL)) return;
 		else {
 			lista_t* listado_doctores = generar_informe(clinica, parametros[0], parametros[1]);
 			imprimir_doctores(listado_doctores, clinica);
@@ -67,6 +59,22 @@ void procesar_comando(const char* comando, char** parametros, clinica_t* clinica
 	} else {
 		printf(ENOENT_CMD, comando);
 	}
+}
+
+bool verificar_parametros (const char* comando,char* parametro1,char* parametro2,char* parametro3){
+	if (strcmp(comando,COMANDO_PEDIR_TURNO) == 0 && (!parametro1 || !parametro2 || !parametro3)){
+		printf(ENOENT_PARAMS,COMANDO_PEDIR_TURNO);
+		return false;
+	}
+	if (strcmp(comando,COMANDO_ATENDER) == 0 && !parametro1) {
+		printf(ENOENT_PARAMS,COMANDO_ATENDER);
+		return false;
+	}
+	if (strcmp(comando,COMANDO_INFORME) == 0 && (!parametro1 || !parametro2)){
+		printf(ENOENT_PARAMS,COMANDO_INFORME);
+		return false;
+	}
+	return true;
 }
 
 void imprimir_doctores(lista_t* lista, clinica_t* clinica){
@@ -98,14 +106,6 @@ bool verificar_validez_turno(clinica_t* clinica,const char* paciente,const char*
 			return false; 
 		}
 	return true;		
-}
-
-
-void eliminar_fin_linea(char* linea) {
-	size_t len = strlen(linea);
-	if (linea[len - 1] == '\n') {
-		linea[len - 1] = '\0';
-	}
 }
 
 void procesar_entrada(clinica_t* clinica) {

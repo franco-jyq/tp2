@@ -178,5 +178,8 @@ Post : Se devolvio el entero correspondiente al resultado
 */
 int cmp_pacientes(const void* paciente1,const void* paciente2);
 
+/* Remplaza el '\n' por un '\o' */
+void eliminar_fin_linea(char* linea);
+
 #endif 
 

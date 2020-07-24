@@ -270,3 +270,11 @@ bool es_numero(char* str){
 	}
 	return true;
 }
+
+
+void eliminar_fin_linea(char* linea) {
+	size_t len = strlen(linea);
+	if (linea[len - 1] == '\n') {
+		linea[len - 1] = '\0';
+	}
+}
