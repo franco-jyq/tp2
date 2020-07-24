@@ -3,11 +3,9 @@
 #include "heap.h"
 #include "abb.h"
 #include "lista.h"
+#include "funciones_tp2.h"
 #include <stdio.h>
 #include <string.h>
-#include "funciones_tp2.h"
-#include "strutil.h"
-#include "mensajes.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -44,7 +42,7 @@ campo_doctores_t* campo_doctores_crear(char* especialidad){
 	campo_doctores_t* campo_doctores = malloc(sizeof(campo_doctores_t));
 	if (!campo_doctores) return NULL;
 	campo_doctores->especialidad = strdup(especialidad);
-	if (!campo_doctores->especialidad){
+	if (!campo_doctores->especialidad) {
 		free(campo_doctores);
 		return NULL;
 	}
@@ -69,11 +67,11 @@ struct clinica{
 };
 
 void destruir_clinica(clinica_t* clinica){	
-	if(clinica->pacientes) hash_destruir(clinica->pacientes);
-	if(clinica->doctores) abb_destruir(clinica->doctores);
-	if(clinica->colas_de_urgencia){
+	if (clinica->pacientes) hash_destruir(clinica->pacientes);
+	if (clinica->doctores) abb_destruir(clinica->doctores);
+	if (clinica->colas_de_urgencia) {
 		hash_iter_t* iter = hash_iter_crear(clinica->colas_de_urgencia);
-		while (!hash_iter_al_final(iter)){
+		while (!hash_iter_al_final(iter)) {
 			const char* actual = hash_iter_ver_actual(iter);
 			lista_t* lista = hash_obtener(clinica->colas_de_urgencia,actual);
 			lista_destruir(lista,free);
@@ -83,9 +81,9 @@ void destruir_clinica(clinica_t* clinica){
 		hash_destruir(clinica->colas_de_urgencia);
 	}
 	
-	if(clinica->colas_regulares){
+	if (clinica->colas_regulares) {
 		hash_iter_t* iter = hash_iter_crear(clinica->colas_regulares);
-		while (!hash_iter_al_final(iter)){
+		while (!hash_iter_al_final(iter)) {
 			const char* actual = hash_iter_ver_actual(iter);
 			heap_t* heap = hash_obtener(clinica->colas_regulares,actual);
 			heap_destruir(heap,campo_pacientes_destruir);
@@ -94,40 +92,40 @@ void destruir_clinica(clinica_t* clinica){
 		hash_iter_destruir(iter);
 		hash_destruir(clinica->colas_regulares);
 	}
-	if(clinica->especialidades) hash_destruir(clinica->especialidades);
+	if (clinica->especialidades) hash_destruir(clinica->especialidades);
 	free(clinica);
 }
 
 clinica_t* clinica_crear(){
 	clinica_t* clinica = malloc(sizeof(clinica_t));
-	if(!clinica) return NULL;	
+	if (!clinica) return NULL;	
 	
 	clinica->doctores = abb_crear(strcmp, destruir_campo_doctores); 
-	if(!clinica->doctores){
+	if (!clinica->doctores) {
 		destruir_clinica(clinica);
 		return NULL;
 	}
 	
 	clinica->pacientes = hash_crear(free);
-	if(!clinica->pacientes){
+	if (!clinica->pacientes) {
 		destruir_clinica(clinica);
 		return NULL;
 	}
 
 	clinica->especialidades = hash_crear(NULL);
-	if(!clinica->especialidades){
+	if (!clinica->especialidades) {
 		destruir_clinica(clinica);
 		return NULL;
 	}
 
 	clinica->colas_de_urgencia = hash_crear(NULL);
-	if(!clinica->colas_de_urgencia){
+	if (!clinica->colas_de_urgencia) {
 		destruir_clinica(clinica);
 		return NULL;
 	}
 
 	clinica->colas_regulares = hash_crear(NULL);
-	if(!clinica->colas_regulares){
+	if (!clinica->colas_regulares) {
 		destruir_clinica(clinica);
 		return NULL;
 	}
@@ -142,9 +140,9 @@ bool agregar_doctor(clinica_t* clinica, char* doctor, void* campo_doctores){
  
 bool agregar_paciente(clinica_t* clinica, char* paciente, char* anio){
 	int* numero = malloc(sizeof(int));
-	if(!numero) return false;
+	if (!numero) return false;
 	*numero = atoi(anio);
-    if(!hash_guardar(clinica->pacientes, paciente, numero)){	
+    if (!hash_guardar(clinica->pacientes, paciente, numero)) {	
 			free(numero);
 			return false;
 	}
@@ -165,27 +163,24 @@ bool especialidad_pertence (clinica_t* clinica,const char* especialidad){
 
 size_t cantidad_pacientes_especialidad(clinica_t* clinica,const char* especialidad){
 	size_t largo1,largo2;
-
 	lista_t* lista = (hash_obtener(clinica->colas_de_urgencia,especialidad));
 	if (!lista) largo1 = 0;
 	else {
 		largo1 = lista_largo(lista);
-	}
-		
+	}		
 	heap_t* heap = hash_obtener(clinica->colas_regulares,especialidad);
 	if (!heap) largo2 = 0;
 	else {
 		largo2 = heap_cantidad(heap);
-	}
-	
+	}	
 	return largo1 + largo2;
 }
 
 bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* especialidad){
-	if (!hash_pertenece(clinica->colas_de_urgencia,especialidad)){
+	if (!hash_pertenece(clinica->colas_de_urgencia,especialidad)) {
 		lista_t* lista = lista_crear();
 		if (!lista) return false;
-		if(!hash_guardar(clinica->colas_de_urgencia,especialidad,lista)){
+		if (!hash_guardar(clinica->colas_de_urgencia,especialidad,lista)) {
 			lista_destruir(lista,NULL);
 			return false;
 		}
@@ -199,10 +194,10 @@ bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* es
 }
 
 bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* especialidad){
-	if (!hash_pertenece(clinica->colas_regulares,especialidad)){
+	if (!hash_pertenece(clinica->colas_regulares,especialidad)) {
 		heap_t* heap = heap_crear(cmp_pacientes);
 		if (!heap) return false;
-		if(!hash_guardar(clinica->colas_regulares,especialidad,heap)){
+		if (!hash_guardar(clinica->colas_regulares,especialidad,heap)) {
 			heap_destruir(heap,NULL);
 			return false;
 		}
@@ -218,7 +213,7 @@ bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* es
 
 bool verificar_urgencias(clinica_t* clinica, char* especialidad, char** copia_paciente_urgente){
 	lista_t* lista = hash_obtener(clinica->colas_de_urgencia, especialidad);
-	if(!lista || lista_esta_vacia(lista)) return false;
+	if (!lista || lista_esta_vacia(lista)) return false;
 	char* paciente_urgente = lista_borrar_primero(lista);
 	*copia_paciente_urgente = strdup(paciente_urgente);
 	free(paciente_urgente);
@@ -227,7 +222,7 @@ bool verificar_urgencias(clinica_t* clinica, char* especialidad, char** copia_pa
 
 bool verificar_regulares(clinica_t* clinica, char* especialidad, char** copia_paciente_regular){
 	heap_t* heap = hash_obtener(clinica->colas_regulares, especialidad);
-	if(!heap || heap_esta_vacio(heap)) return false;
+	if (!heap || heap_esta_vacio(heap)) return false;
 	campo_pacientes_t* campo_paciente = heap_desencolar(heap);
 	*copia_paciente_regular = strdup(campo_paciente->nombre);
 	campo_pacientes_destruir(campo_paciente);
@@ -235,13 +230,11 @@ bool verificar_regulares(clinica_t* clinica, char* especialidad, char** copia_pa
 }
 
 bool atender_siguiente(clinica_t* clinica, const char* doctor, char** paciente, char** especialidad){
-
 	campo_doctores_t* campo_doctor = abb_obtener(clinica->doctores, doctor);
-	if(!campo_doctor)return false;
+	if (!campo_doctor)return false;
 	*especialidad = campo_doctor->especialidad;
-
-	if(!verificar_urgencias(clinica, *especialidad, paciente)){
-		if(!verificar_regulares(clinica, *especialidad, paciente)) return false;
+	if (!verificar_urgencias(clinica, *especialidad, paciente)) {
+		if (!verificar_regulares(clinica, *especialidad, paciente)) return false;
 	}
 	campo_doctor->atendidos ++;
 	return true;

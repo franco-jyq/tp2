@@ -112,20 +112,52 @@ Post: Se devolvio la cantidad de pacientes
 */
 size_t cantidad_pacientes_especialidad(clinica_t* clinica,const char* especialidad);
 
+/*
+Enlista al paciente en la especialidad en la lista indicada segun la especialidad.
+Si la lista no existe la crea. Devuelve false en caso de error
+Pre: La clinica fue creada, el paciente y la especialidad pertenecen a la clinica
+Post: Se enlisto al paciente, se devolvio false en caso de error
+*/
 bool sacar_turno_urgente (clinica_t* clinica,const char* paciente,const char* especialidad);
 
+/*
+Encola al paciente en la especialidad en el heap indicado segun la especialidad.
+Si el heap no existe lo crea. Devuelve false en caso de error
+Pre: La clinica fue creada, el paciente y la especialidad pertenecen a la clinica
+Post: Se encolo al paciente, se devolvio false en caso de error
+*/
 bool sacar_turno_regular (clinica_t* clinica,const char* paciente,const char* especialidad);
 
-/*Atiende si es que hay al siguiente paciente*/
+/*
+Desenlista o desencola al paciente siguiente segun corresponda. Devuelve false en caso de que
+el doctor no este registrado en la clinica
+Pre: La clinica fue creada
+Post: Se atendio al siguiente paciente, se devolvio false en caso de error
+*/
 bool atender_siguiente(clinica_t* clinica,const char* doctor, char** paciente, char** especialidad);
 
+/*
+Devuelve una lista ordenada de doctores segun el rango pasado por parametro, devuelve NULL en caso de error
+Pre: La clinica fue creada
+Post: Se devolvio la lista, NULL en caso de error
+*/
 lista_t* generar_informe(clinica_t* clinica, char* inicio, char* fin);
 
-/**/
+
+/*
+Devuelve la especialidad correspondiente al doctor pasado por parametro
+Pre: Se creo la clinica, el doctor esta registrado en la clinica
+Post: Se devolvio la especialidad
+*/
 char* obtener_especialidad(clinica_t* clinica, char* doctor);
 
-/**/
+/*
+Devuelve la cantidad de pacientes atendidos correspondiente al doctor pasado por parametro
+Pre: Se creo la clinica, el doctor esta registrado en la clinica
+Post: Se devolvio la cantidad de pacientes atendidos
+*/
 size_t obtener_atendidos(clinica_t* clinica, char* doctor);
+
 /*******************************************
 *
 *           Funciones auxiliares
